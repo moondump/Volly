@@ -26,15 +26,40 @@ companyAuthRouter.post('/company/signup', jsonParser, (request, response, next) 
   if(!formattedPhoneNumber)
     return next(new httpErrors(400, '__ERROR__ invalid phone number'));
 
-  return Company.create(request.body.companyName, request.body.password, request.body.email, formattedPhoneNumber, request.body.website)
-    .then(company => company.createToken())
-    .then(token => response.json({token}))
-    .catch(next);
+  // REVIEW: Long line.
+  return Company.create(
+    request.body.companyName, request.body.password, request.body.email,
+    formattedPhoneNumber, request.body.website
+  )
+  .then(company => company.createToken())
+  .then(token => response.json({token}))
+  .catch(next);
 });
 
 companyAuthRouter.post('/company/send', bearerAuthCompany, jsonParser, (request, response, next) => {
-  if(!request.body.textMessage || !request.body.volunteers || !Array.isArray(request.body.volunteers) || !request.body.volunteers.length)
+  // REVIEW: make the if statement condition line shorter by creating local
+  // variables for commonly used properties. Sometimes it's worth it to create
+  // a variable instead of drilling down through `request.body.volunteers` over
+  // and over.
+  let body = request.body;
+  let volunteers = body.volunteers;
+  if(!body.textMessage || !volunteers || !Array.isArray(volunteers) || !volunteers.length) {
     return next(new httpErrors(400, '__ERROR__ <textMessage> and <volunteers> (array) are required, and volunteers must not be empty.'));
+  }
+
+  // REVIEW: The if statement above actually tries to handle many different
+  // things. Splitting the if statement into more specific cases will make the
+  // code more readable AND you get the extra bonus of being able to return
+  // more specific error messages
+  if(!body.textMessage) {
+    return next(new httpErrors(400, '__ERROR__ <textMessage> required'));
+  }else if (!volunteers) {
+    return next(new httpErrors(400, '__ERROR__ <volunteers> required'));
+  } else if (!Array.isArray(volunteers)) {
+    return next(new httpErrors(400, '__ERROR__ <volunteers> must be array'));
+  } else if (!volunteers.length) {
+    return next(new httpErrors(400, '__ERROR__ <volunteers> array must not be empty'));
+  }
 
   let volunteers = {};
   request.company.pendingVolunteers.concat(request.company.activeVolunteers)
@@ -77,6 +102,8 @@ companyAuthRouter.get('/company/active', bearerAuthCompany, (request, response, 
 });
 
 companyAuthRouter.put('/company/update', bearerAuthCompany, jsonParser, (request, response, next) => {
+  // REVIEW: You can definitely break up this long line like the volunteer one
+  // above.
   if(!(request.body.companyName || request.body.password || request.body.email || request.body.phoneNumber || request.body.website))
     return next(new httpErrors(400, '__ERROR__ <companyName>, <email>, <phoneNumber>, <website> or <password> are required to update company info'));
 
