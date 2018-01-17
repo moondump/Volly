@@ -64,6 +64,3 @@ Nice models. It's easy to see all the properties for the company and the
 voluneteers. Good job taking advantage of attaching methods to the models.
 
 
-#### Tests
-
-
